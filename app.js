@@ -4,9 +4,8 @@ var favicon = require('serve-favicon');
 var logger = require('morgan');
 var cookieParser = require('cookie-parser');
 var bodyParser = require('body-parser');
-
-var routes = require('./routes/index');
-var users = require('./routes/users');
+var _ = require('lodash');
+var links = require('./links.js');
 
 var app = express();
 
@@ -23,8 +22,17 @@ app.use(cookieParser());
 app.use(require('less-middleware')(path.join(__dirname, 'public')));
 app.use(express.static(path.join(__dirname, 'public')));
 
-app.use('/', routes);
-app.use('/users', users);
+/* GET siteswap. */
+app.get('/:ss', function(req, res) {
+    var ss = req.params.ss;
+    console.log('Looking for siteswap:', ss);
+    var match = _.find(links, function(x) { return x.title === ss; });
+    if (match)
+        res.redirect(match.link);
+    else {
+        res.status(404);
+    }
+});
 
 // catch 404 and forward to error handler
 app.use(function(req, res, next) {
@@ -56,6 +64,5 @@ app.use(function(err, req, res, next) {
         error: {}
     });
 });
-
 
 module.exports = app;
