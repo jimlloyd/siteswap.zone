@@ -2,4 +2,8 @@ extends layout
 
 block content
   h1= title
-  p Welcome to #{title}
+
+  ul
+    each val in links
+      a(href='/z/#{val.title}') #{val.title}
+      br
