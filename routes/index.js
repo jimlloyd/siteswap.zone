@@ -1,6 +1,6 @@
 var express = require('express');
 var router = express.Router();
-var links = require('../links.js');
+var lookup = require('../lib/lookup.js');
 var _ = require('lodash');
 var fs = require('fs');
 
@@ -13,7 +13,7 @@ router.get('/favicon.ico', function(req, res) {
 
 /* GET home page. */
 router.get('/', function(req, res) {
-  links.getIndex()
+  lookup.getIndex()
     .then(function (links) {
       res.render('index', { title: 'Siteswap Zone', links: links });
     });
@@ -23,7 +23,7 @@ router.get('/', function(req, res) {
 router.get('/:ss', function(req, res) {
   var ss = req.params.ss;
   console.log('Looking up siteswap for title:', ss);
-  links.lookupByTitle(ss)
+  lookup.lookupByTitle(ss)
     .then(function (match) {
       console.log('Lookup for ', ss, ' returned:', match);
       if (_.isObject(match))
@@ -38,7 +38,7 @@ router.get('/:ss', function(req, res) {
 router.get('/z/:ss', function(req, res) {
   var ss = req.params.ss;
   console.log('Looking up siteswap for title:', ss);
-  links.lookupByTitle(ss)
+  lookup.lookupByTitle(ss)
     .then(function (match) {
       console.log('Lookup for ', ss, ' returned:', match);
       var imgur = match.link.substr(0, match.link.length-4);
