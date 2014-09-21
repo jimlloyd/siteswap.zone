@@ -3,14 +3,54 @@
 var Q = require('q');
 var _ = require('lodash');
 var request = require('request');
+var dlog = require('debug')('lookup');
 
 var cachedIndex = [];
 
-function getIndex () {
-  if (cachedIndex.length > 0)
-    return new Q(cachedIndex);
+var refresh = {
+  nextScheduledTimeout: null,
+  lastRefreshAt: 0
+};
+
+var millisPerMinute = 1000 * 60;
+var refreshInterval = 30 * millisPerMinute;
+var refreshThrottleRate = 2 * millisPerMinute;
+
+function needRefresh() {
+  var doRefresh = false;
+  if (refreshInterval.lastRefreshAt === 0 || cachedIndex.length == 0)
+    doRefresh = true;
   else {
-    return fetchBody().then(extractResult);
+    var now = Date.now();
+    var elapsed = now - refresh.lastRefreshAt;
+    doRefresh = elapsed > refreshThrottleRate;
+  }
+
+  if (doRefresh && refresh.nextScheduledTimeout !== null) {
+    dlog('Cancelling previously scheduled refresh');
+    clearTimeout(refresh.nextScheduledTimeout);
+    refresh.nextScheduledTimeout = null;
+  }
+
+  return doRefresh;
+}
+
+function refreshNow() {
+  refresh.lastRefreshAt = Date.now();
+  refresh.nextScheduledTimeout = setTimeout(refreshNow, refreshInterval);
+
+  dlog('Starting refresh now:', new Date(refresh.lastRefreshAt).toString());
+  dlog('Next refresh at:', new Date(refresh.lastRefreshAt+refreshInterval).toString());
+
+  return fetchBody().then(extractResult);
+}
+
+
+function getIndex () {
+  if (needRefresh())
+    return refreshNow();
+  else {
+    return new Q(cachedIndex);
   }
 }
 
@@ -48,6 +88,8 @@ function extractResult(body) {
       return _.isString(image.title) && _.isString(image.link);
     });
 
+    cachedIndex = images;
+
     return new Q(images);
 }
 
@@ -57,12 +99,8 @@ function lookupByTitle(ss) {
     return new Q(match);
   else {
     var deferred = Q.defer();
-    fetchBody()
-      .then(extractResult)
+    getIndex()
       .done(function(newIndex) {
-        if (newIndex.length > cachedIndex.length) {
-          cachedIndex = newIndex;
-        }
         match = findInCache(ss);
         if (match)
           deferred.resolve(match);
