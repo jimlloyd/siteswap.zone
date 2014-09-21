@@ -41,8 +41,9 @@ router.get('/z/:ss', function(req, res) {
   links.lookupByTitle(ss)
     .then(function (match) {
       console.log('Lookup for ', ss, ' returned:', match);
+      var imgur = match.link.substr(0, match.link.length-4);
       if (_.isObject(match))
-        res.render('onesiteswap', { title: match.title, img: match.link });
+        res.render('onesiteswap', { title: match.title, img: match.link, imgur: imgur });
       else {
           res.status(404);
       }
