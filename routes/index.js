@@ -21,6 +21,10 @@ router.get('/', function(req, res) {
     });
 });
 
+router.get('/robots.txt', function(req, res) {
+  res.send('User-agent: *\nDisallow: /\n');
+});
+
 function notFound(res, ss) {
   res.status(404).send(util.format('Siteswap %s not in index.', ss));
 }
